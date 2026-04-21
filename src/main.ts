@@ -2,10 +2,12 @@ import { setupCanvas, clear } from "./render";
 import { clearPressed } from "./input";
 import { Game } from "./game";
 import { initTouch } from "./touch";
+import { initTilt } from "./tilt";
 
 const canvas = setupCanvas("game");
 const game = new Game(canvas);
 initTouch(canvas.el);
+initTilt();
 
 let last = performance.now();
 function frame(now: number): void {
