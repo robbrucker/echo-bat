@@ -4,6 +4,10 @@ import { POWERUP_COLOR, type PowerupKind } from "./powerups";
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
+const IS_TOUCH =
+  typeof window !== "undefined" &&
+  ("ontouchstart" in window || (navigator.maxTouchPoints || 0) > 0);
+
 export function drawPowerupIndicators(
   ctx: CanvasRenderingContext2D,
   _canvas: Canvas,
@@ -241,7 +245,11 @@ export function drawMenuOverlay(
   // controls
   ctx.fillStyle = "rgba(160, 180, 210, 0.5)";
   ctx.font = `12px ${MONO}`;
-  ctx.fillText("space — dash     ↑ ↓ — steer", cx, cy + 46);
+  ctx.fillText(
+    IS_TOUCH ? "tilt — steer     tap — dash" : "space — dash     ↑ ↓ — steer",
+    cx,
+    cy + 46,
+  );
 
   // best
   if (best > 0) {
@@ -255,7 +263,7 @@ export function drawMenuOverlay(
   ctx.shadowColor = "rgba(140, 220, 255, 0.8)";
   ctx.shadowBlur = 10 * pulse;
   ctx.font = `16px ${MONO}`;
-  ctx.fillText("press space to fly", cx, cy + 116);
+  ctx.fillText(IS_TOUCH ? "tap to fly" : "press space to fly", cx, cy + 116);
   ctx.restore();
 }
 
@@ -309,7 +317,7 @@ export function drawCrashOverlay(
     ctx.shadowColor = "rgba(140, 220, 255, 0.6)";
     ctx.shadowBlur = 8 * pulse;
     ctx.font = `14px ${MONO}`;
-    ctx.fillText("space to retry", cx, cy + 82);
+    ctx.fillText(IS_TOUCH ? "tap to retry" : "space to retry", cx, cy + 82);
   }
 
   ctx.restore();

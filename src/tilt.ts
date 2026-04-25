@@ -1,23 +1,23 @@
-// Tilt-to-steer controls using DeviceOrientation.
-// Calibrates the neutral posture to the orientation at enable time.
-// Slowly auto-recalibrates inside the deadzone so posture shifts self-correct.
+// Analog tilt-to-steer using DeviceOrientation.
+//
+// Calibrates the neutral posture to the orientation at enable time, then
+// auto-recalibrates inside the deadzone so posture shifts self-correct.
 // Tilting the top of the phone BACK (away from user) = bat UP; TOWARD user = DOWN.
+//
+// The output is an analog value in [-1, 1]. Bat input convention: negative =
+// up (matches keyboard ArrowUp's `input -= 1`). Consumers read via getTiltSteer().
 
-const DEADZONE_DEG = 5;
+const DEADZONE_DEG = 6;
+const FULL_RANGE_DEG = 22; // tilt past this for full input
 const RECALIBRATE_ALPHA = 0.0015;
 
 let enabled = false;
 let neutralBeta: number | null = null;
-let upHeld = false;
-let downHeld = false;
+let analogSteer = 0;
 
 type MaybePermissionDOE = {
   requestPermission?: () => Promise<"granted" | "denied">;
 };
-
-function dispatchKey(type: "keydown" | "keyup", code: string): void {
-  window.dispatchEvent(new KeyboardEvent(type, { code, key: code }));
-}
 
 function onOrientation(e: DeviceOrientationEvent): void {
   const beta = e.beta;
@@ -33,17 +33,15 @@ function onOrientation(e: DeviceOrientationEvent): void {
     neutralBeta += delta * RECALIBRATE_ALPHA;
   }
 
-  const up = delta > DEADZONE_DEG;
-  const down = delta < -DEADZONE_DEG;
-
-  if (up !== upHeld) {
-    upHeld = up;
-    dispatchKey(up ? "keydown" : "keyup", "ArrowUp");
+  const sign = Math.sign(delta);
+  const mag = Math.abs(delta);
+  if (mag <= DEADZONE_DEG) {
+    analogSteer = 0;
+    return;
   }
-  if (down !== downHeld) {
-    downHeld = down;
-    dispatchKey(down ? "keydown" : "keyup", "ArrowDown");
-  }
+  const t = Math.min(1, (mag - DEADZONE_DEG) / (FULL_RANGE_DEG - DEADZONE_DEG));
+  // tilt-back (delta > 0) -> bat UP (negative input); tilt-forward -> DOWN.
+  analogSteer = -sign * t;
 }
 
 async function requestPermissionIfNeeded(): Promise<boolean> {
@@ -88,4 +86,9 @@ export function recalibrateTilt(): void {
 
 export function isTiltActive(): boolean {
   return enabled;
+}
+
+/** Analog steer in [-1, 1]. Negative = up, positive = down. 0 when in deadzone or tilt unavailable. */
+export function getTiltSteer(): number {
+  return enabled ? analogSteer : 0;
 }

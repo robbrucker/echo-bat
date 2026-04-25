@@ -1,6 +1,7 @@
 import { isHeld } from "./input";
 import type { Canvas } from "./render";
 import { PALETTE } from "./palette";
+import { getTiltSteer } from "./tilt";
 import {
   PING_FLASH_SEC,
   DASH_VY,
@@ -61,7 +62,9 @@ export class Bat {
   dash(now: number): boolean {
     if (this.dashCooldown > 0) return false;
     let dir = 0;
-    if (isHeld("ArrowUp") || isHeld("KeyW")) dir = -1;
+    const tilt = getTiltSteer();
+    if (Math.abs(tilt) > 0.15) dir = tilt < 0 ? -1 : 1;
+    else if (isHeld("ArrowUp") || isHeld("KeyW")) dir = -1;
     else if (isHeld("ArrowDown") || isHeld("KeyS")) dir = 1;
     else dir = -1; // default upward
     this.vy = dir * DASH_VY;
@@ -78,9 +81,16 @@ export class Bat {
   update(dt: number, canvas: Canvas): void {
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
 
+    // Analog tilt overrides keyboard when present, so a small phone tilt
+    // produces a small input — no more "binary key held = max accel".
     let input = 0;
-    if (isHeld("ArrowUp") || isHeld("KeyW")) input -= 1;
-    if (isHeld("ArrowDown") || isHeld("KeyS")) input += 1;
+    const tilt = getTiltSteer();
+    if (Math.abs(tilt) > 0.01) {
+      input = tilt;
+    } else {
+      if (isHeld("ArrowUp") || isHeld("KeyW")) input -= 1;
+      if (isHeld("ArrowDown") || isHeld("KeyS")) input += 1;
+    }
 
     const speedCap = Math.max(MAX_SPEED, Math.abs(this.vy));
     if (input !== 0) {
