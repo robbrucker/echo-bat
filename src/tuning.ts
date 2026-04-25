@@ -79,7 +79,7 @@ export const PING_COOLDOWN_S = 0.22;
 export const PING_FLASH_SEC = 0.18;
 
 // Boss encounter
-export const BOSS_SPAWN_INTERVAL_PX = 3000;
+export const BOSS_SPAWN_INTERVAL_PX = 35000;
 export const BOSS_RADIUS = 32;
 export const BOSS_HP = 2;
 export const BOSS_DRIFT_FACTOR = 0.6;

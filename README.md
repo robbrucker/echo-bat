@@ -22,7 +22,7 @@ The world scrolls horizontally on its own. The bat only moves up and down — `�
 - **Moths** — moving amber pickups, bigger points
 - **Golden fireflies** — rare, pink-gold, massive combo payoff
 - **Stingers** — red hazards, dive/dash through to kill for points
-- **Bosses** — appear every 300 m, HP pips above the body, fire hostile ping-waves; dash into them to damage
+- **Bosses** — appear every 3500 m, HP pips above the body, fire hostile ping-waves; dash into them to damage
 - **Wall crystals** — cyan crystal clusters on walls, shatter for bonuses
 - **Chambers** — wide sections denser with fireflies
 - **Biomes** — cave palette + background shifts every 1500 m (abyss → ember → void → verdant)
