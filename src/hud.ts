@@ -1,7 +1,23 @@
 import type { Canvas } from "./render";
 import { formatMeters } from "./score";
 import { POWERUP_COLOR, type PowerupKind } from "./powerups";
-import { isTiltActive } from "./tilt";
+import { getTiltStatus } from "./tilt";
+
+const TILT_STATUS_TEXT: Record<ReturnType<typeof getTiltStatus>, string> = {
+  unsupported: "tilt: not supported on this browser",
+  pending: "tilt: tap to enable",
+  denied: "tilt: denied — Settings > Safari > Motion",
+  granted: "tilt: on",
+  "no-events": "tilt: granted, awaiting motion data",
+};
+
+const TILT_STATUS_ON: Record<ReturnType<typeof getTiltStatus>, boolean> = {
+  unsupported: false,
+  pending: false,
+  denied: false,
+  granted: true,
+  "no-events": false,
+};
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
@@ -249,13 +265,12 @@ export function drawMenuOverlay(
   if (IS_TOUCH) {
     ctx.fillText("tap top/bottom or tilt — steer", cx, cy + 38);
     ctx.fillText("tap anywhere — dash", cx, cy + 56);
-    // status: shows whether iOS motion permission was granted
-    const tiltOn = isTiltActive();
-    ctx.fillStyle = tiltOn
+    const status = getTiltStatus();
+    ctx.fillStyle = TILT_STATUS_ON[status]
       ? "rgba(150, 255, 190, 0.6)"
       : "rgba(255, 200, 150, 0.45)";
     ctx.font = `10px ${MONO}`;
-    ctx.fillText(tiltOn ? "tilt: on" : "tilt: off — top/bottom still works", cx, cy + 74);
+    ctx.fillText(TILT_STATUS_TEXT[status], cx, cy + 74);
   } else {
     ctx.fillText("space — dash     ↑ ↓ — steer", cx, cy + 46);
   }

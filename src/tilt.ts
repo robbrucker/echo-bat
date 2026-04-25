@@ -1,36 +1,72 @@
-// Analog tilt-to-steer using DeviceOrientation.
+// Analog tilt-to-steer using DeviceOrientation, with landscape support.
 //
-// Calibrates the neutral posture to the orientation at enable time, then
+// Calibrates the neutral posture to the orientation at enable time and
 // auto-recalibrates inside the deadzone so posture shifts self-correct.
-// Tilting the top of the phone BACK (away from user) = bat UP; TOWARD user = DOWN.
-//
-// The output is an analog value in [-1, 1]. Bat input convention: negative =
-// up (matches keyboard ArrowUp's `input -= 1`). Consumers read via getTiltSteer().
+// Also recalibrates on orientationchange so portrait↔landscape rotation
+// doesn't leave the user stuck off-axis.
 
 const DEADZONE_DEG = 6;
 const FULL_RANGE_DEG = 22; // tilt past this for full input
 const RECALIBRATE_ALPHA = 0.0015;
 
+type TiltStatus = "unsupported" | "pending" | "denied" | "granted" | "no-events";
+
 let enabled = false;
-let neutralBeta: number | null = null;
+let neutralRaw: number | null = null;
 let analogSteer = 0;
+let receivedEvent = false;
+let permissionState: "pending" | "granted" | "denied" = "pending";
+let lastAngle = 0;
 
 type MaybePermissionDOE = {
   requestPermission?: () => Promise<"granted" | "denied">;
 };
 
-function onOrientation(e: DeviceOrientationEvent): void {
+// Returns the current screen orientation in degrees (0, 90, 180, 270).
+function getOrientationAngle(): number {
+  const so = (typeof screen !== "undefined" ? screen : null)?.orientation;
+  if (so && typeof so.angle === "number") return so.angle;
+  // legacy iOS path
+  const wo = (window as unknown as { orientation?: number }).orientation;
+  if (typeof wo === "number") return wo;
+  return 0;
+}
+
+// Map device beta/gamma to a single "user perceives this as tilt-forward/back"
+// axis based on which way the device is currently rotated.
+function rawTiltFor(e: DeviceOrientationEvent): number | null {
   const beta = e.beta;
-  if (beta == null) return;
-  if (neutralBeta === null) {
-    neutralBeta = beta;
+  const gamma = e.gamma;
+  if (beta == null || gamma == null) return null;
+  const angle = getOrientationAngle();
+  if (angle === 90) return -gamma;
+  if (angle === -90 || angle === 270) return gamma;
+  if (angle === 180) return -beta;
+  return beta;
+}
+
+function onOrientation(e: DeviceOrientationEvent): void {
+  receivedEvent = true;
+
+  const raw = rawTiltFor(e);
+  if (raw == null) return;
+
+  // Recalibrate when the device rotation changes — neutral posture differs
+  // between portrait and landscape.
+  const angle = getOrientationAngle();
+  if (angle !== lastAngle) {
+    lastAngle = angle;
+    neutralRaw = null;
+  }
+
+  if (neutralRaw === null) {
+    neutralRaw = raw;
     return;
   }
-  const delta = beta - neutralBeta;
+  const delta = raw - neutralRaw;
 
-  // drift neutral toward current while in deadzone (handles posture shifts)
   if (Math.abs(delta) < DEADZONE_DEG * 0.5) {
-    neutralBeta += delta * RECALIBRATE_ALPHA;
+    neutralRaw += delta * RECALIBRATE_ALPHA;
   }
 
   const sign = Math.sign(delta);
@@ -40,15 +76,12 @@ function onOrientation(e: DeviceOrientationEvent): void {
     return;
   }
   const t = Math.min(1, (mag - DEADZONE_DEG) / (FULL_RANGE_DEG - DEADZONE_DEG));
-  // tilt-back (delta > 0) -> bat UP (negative input); tilt-forward -> DOWN.
+  // tilt-back -> bat UP (negative input); tilt-forward -> DOWN.
   analogSteer = -sign * t;
 }
 
-// Synchronously called from the gesture handler. iOS 13+ requires
-// requestPermission() to fire under a user-activation context — using a
-// .then() chain here (instead of async/await across function boundaries)
-// keeps the call directly inside the gesture handler with no await between
-// them, which is what Safari actually checks for.
+// Synchronously called from the gesture handler — must be inside the user
+// activation context for iOS to even consider showing the prompt.
 function syncEnableTilt(): void {
   if (enabled) return;
   if (typeof DeviceOrientationEvent === "undefined") return;
@@ -58,9 +91,12 @@ function syncEnableTilt(): void {
     // Android / older iOS — no permission required.
     window.addEventListener("deviceorientation", onOrientation);
     enabled = true;
+    permissionState = "granted";
     return;
   }
 
+  // iOS 13+: synchronous Promise — keeps requestPermission() inside the
+  // gesture activation. Don't async/await across function boundaries here.
   try {
     anyEvt
       .requestPermission()
@@ -68,20 +104,24 @@ function syncEnableTilt(): void {
         if (result === "granted") {
           window.addEventListener("deviceorientation", onOrientation);
           enabled = true;
+          permissionState = "granted";
+        } else {
+          permissionState = "denied";
         }
       })
       .catch(() => {
-        // denied or unavailable — fallback steering (touch zones / keyboard) still works
+        permissionState = "denied";
       });
   } catch {
-    // already handled / rejected synchronously
+    permissionState = "denied";
   }
 }
 
 export function initTilt(): void {
   if (typeof window === "undefined") return;
-  // Attach one-shot listeners on the earliest user gesture; default
-  // (non-passive) so transient-activation isn't dropped by Safari.
+
+  // Try on the first user gesture; non-passive so transient activation
+  // isn't dropped by Safari.
   const attempt = (): void => {
     window.removeEventListener("touchstart", attempt);
     window.removeEventListener("pointerdown", attempt);
@@ -91,17 +131,36 @@ export function initTilt(): void {
   window.addEventListener("touchstart", attempt, { once: true });
   window.addEventListener("pointerdown", attempt, { once: true });
   window.addEventListener("keydown", attempt, { once: true });
+
+  // Force recalibration on rotation so the user doesn't end up biased.
+  window.addEventListener("orientationchange", () => {
+    neutralRaw = null;
+  });
+  if (typeof screen !== "undefined" && screen.orientation) {
+    screen.orientation.addEventListener?.("change", () => {
+      neutralRaw = null;
+    });
+  }
 }
 
 export function recalibrateTilt(): void {
-  neutralBeta = null;
+  neutralRaw = null;
 }
 
 export function isTiltActive(): boolean {
   return enabled;
 }
 
-/** Analog steer in [-1, 1]. Negative = up, positive = down. 0 when in deadzone or tilt unavailable. */
+/** Analog steer in [-1, 1]. Negative = up, positive = down. */
 export function getTiltSteer(): number {
   return enabled ? analogSteer : 0;
+}
+
+/** Detailed status for the menu HUD. */
+export function getTiltStatus(): TiltStatus {
+  if (typeof DeviceOrientationEvent === "undefined") return "unsupported";
+  if (permissionState === "denied") return "denied";
+  if (!enabled) return "pending";
+  if (!receivedEvent) return "no-events";
+  return "granted";
 }
