@@ -1,9 +1,20 @@
-// Analog tilt-to-steer using DeviceOrientation, with landscape support.
+// Analog tilt-to-steer with two backends:
+//   - Native (Capacitor on iOS): uses CoreMotion via @capacitor/motion. The
+//     bridge handles permission natively (NSMotionUsageDescription prompt),
+//     bypassing Safari's flaky DeviceOrientationEvent.requestPermission flow.
+//   - Web (browser): standard window DeviceOrientation events with iOS 13+
+//     permission handling.
+//
+// Either backend feeds the same calibrate-and-map pipeline below. Output is
+// an analog value in [-1, 1].
 //
 // Calibrates the neutral posture to the orientation at enable time and
 // auto-recalibrates inside the deadzone so posture shifts self-correct.
 // Also recalibrates on orientationchange so portrait↔landscape rotation
 // doesn't leave the user stuck off-axis.
+
+import { Capacitor } from "@capacitor/core";
+import { Motion } from "@capacitor/motion";
 
 const DEADZONE_DEG = 6;
 const FULL_RANGE_DEG = 22; // tilt past this for full input
@@ -80,8 +91,26 @@ function onOrientation(e: DeviceOrientationEvent): void {
   analogSteer = -sign * t;
 }
 
+// Native path: subscribe to Capacitor's Motion plugin. The plugin emits
+// DeviceOrientationEvent-shaped events from CoreMotion. iOS shows a
+// system motion-access prompt the first time, governed by
+// NSMotionUsageDescription in Info.plist.
+function enableNativeTilt(): void {
+  if (enabled) return;
+  Motion.addListener("orientation", (event) => {
+    onOrientation(event as unknown as DeviceOrientationEvent);
+  })
+    .then(() => {
+      enabled = true;
+      permissionState = "granted";
+    })
+    .catch(() => {
+      permissionState = "denied";
+    });
+}
+
 // Synchronously called from the gesture handler — must be inside the user
-// activation context for iOS to even consider showing the prompt.
+// activation context for iOS Safari to even consider showing the prompt.
 function syncEnableTilt(): void {
   if (enabled) return;
   if (typeof DeviceOrientationEvent === "undefined") return;
@@ -95,8 +124,8 @@ function syncEnableTilt(): void {
     return;
   }
 
-  // iOS 13+: synchronous Promise — keeps requestPermission() inside the
-  // gesture activation. Don't async/await across function boundaries here.
+  // iOS 13+ Safari: synchronous Promise — keeps requestPermission() inside
+  // the gesture activation. Don't async/await across function boundaries.
   try {
     anyEvt
       .requestPermission()
@@ -120,17 +149,24 @@ function syncEnableTilt(): void {
 export function initTilt(): void {
   if (typeof window === "undefined") return;
 
-  // Try on the first user gesture; non-passive so transient activation
-  // isn't dropped by Safari.
-  const attempt = (): void => {
-    window.removeEventListener("touchstart", attempt);
-    window.removeEventListener("pointerdown", attempt);
-    window.removeEventListener("keydown", attempt);
-    syncEnableTilt();
-  };
-  window.addEventListener("touchstart", attempt, { once: true });
-  window.addEventListener("pointerdown", attempt, { once: true });
-  window.addEventListener("keydown", attempt, { once: true });
+  // Native iOS/Android via Capacitor: skip the Safari permission dance and
+  // subscribe directly to the Motion plugin. The native bridge handles
+  // CoreMotion permission via Info.plist's NSMotionUsageDescription.
+  if (Capacitor.isNativePlatform()) {
+    enableNativeTilt();
+  } else {
+    // Web fallback. Try on the first user gesture; non-passive so transient
+    // activation isn't dropped by Safari.
+    const attempt = (): void => {
+      window.removeEventListener("touchstart", attempt);
+      window.removeEventListener("pointerdown", attempt);
+      window.removeEventListener("keydown", attempt);
+      syncEnableTilt();
+    };
+    window.addEventListener("touchstart", attempt, { once: true });
+    window.addEventListener("pointerdown", attempt, { once: true });
+    window.addEventListener("keydown", attempt, { once: true });
+  }
 
   // Force recalibration on rotation so the user doesn't end up biased.
   window.addEventListener("orientationchange", () => {
@@ -158,7 +194,12 @@ export function getTiltSteer(): number {
 
 /** Detailed status for the menu HUD. */
 export function getTiltStatus(): TiltStatus {
-  if (typeof DeviceOrientationEvent === "undefined") return "unsupported";
+  if (
+    !Capacitor.isNativePlatform() &&
+    typeof DeviceOrientationEvent === "undefined"
+  ) {
+    return "unsupported";
+  }
   if (permissionState === "denied") return "denied";
   if (!enabled) return "pending";
   if (!receivedEvent) return "no-events";
