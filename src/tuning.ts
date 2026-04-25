@@ -79,18 +79,18 @@ export const PING_COOLDOWN_S = 0.22;
 export const PING_FLASH_SEC = 0.18;
 
 // Boss encounter
-export const BOSS_SPAWN_INTERVAL_PX = 35000;
+export const BOSS_SPAWN_INTERVAL_PX = 3000;
 export const BOSS_RADIUS = 32;
-export const BOSS_HP = 3;
+export const BOSS_HP = 2;
 export const BOSS_DRIFT_FACTOR = 0.6;
 export const BOSS_AMBIENT_ALPHA = 0.8;
 export const BOSS_PULSE_HZ = 1.1;
 export const BOSS_FLASH_SEC = 0.35;
 export const BOSS_INVULN_SEC = 0.5;
 export const BOSS_HIT_KNOCKBACK_PX = 30;
-export const BOSS_PING_INTERVAL_SEC = 1.8;
+export const BOSS_PING_INTERVAL_SEC = 3.0;
 export const BOSS_PING_SPEED = 550;
-export const BOSS_PING_MAX_RADIUS = 400;
+export const BOSS_PING_MAX_RADIUS = 260;
 export const BOSS_PING_FADE_SEC = 1.1;
 export const BOSS_BAT_COLLISION_RADIUS = 8;
 export const BOSS_HIT_BONUS = 800;

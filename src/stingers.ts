@@ -24,6 +24,18 @@ type Stinger = {
 const FADE_SEC = 1.1;
 const HIT_RADIUS_BAT = 8;
 
+const SPRITE_SIZE = 110;
+let spriteImg: HTMLImageElement | null = null;
+let spriteFailed = false;
+
+// Stingers use the procedural draw — sprite path disabled per design.
+function getSprite(): HTMLImageElement | null {
+  void spriteImg;
+  void spriteFailed;
+  void SPRITE_SIZE;
+  return null;
+}
+
 export class Stingers {
   items: Stinger[] = [];
   private spawnedDistance = 0;
@@ -121,20 +133,38 @@ export class Stingers {
       const alpha = Math.max(proxAlpha, litAlpha);
       if (alpha < 0.02) continue;
 
-      // halo
-      ctx.fillStyle = `rgba(255, 70, 90, ${alpha * 0.45})`;
-      ctx.shadowColor = "rgba(255, 60, 80, 1)";
-      ctx.shadowBlur = 22 * alpha;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, STINGER_RADIUS * (0.8 + 0.6 * alpha), 0, Math.PI * 2);
-      ctx.fill();
+      const img = getSprite();
+      if (img) {
+        // Pulse drives a small scale so the threat throb reads.
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(s.x, s.y);
+        const scale = 0.85 + 0.3 * pulse;
+        ctx.scale(scale, scale);
+        ctx.drawImage(
+          img,
+          -SPRITE_SIZE / 2,
+          -SPRITE_SIZE / 2,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+        );
+        ctx.restore();
+      } else {
+        // halo
+        ctx.fillStyle = `rgba(255, 70, 90, ${alpha * 0.45})`;
+        ctx.shadowColor = "rgba(255, 60, 80, 1)";
+        ctx.shadowBlur = 22 * alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, STINGER_RADIUS * (0.8 + 0.6 * alpha), 0, Math.PI * 2);
+        ctx.fill();
 
-      // core
-      ctx.fillStyle = `rgba(255, 180, 190, ${alpha})`;
-      ctx.shadowBlur = 10 * alpha;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, STINGER_RADIUS * 0.45, 0, Math.PI * 2);
-      ctx.fill();
+        // core
+        ctx.fillStyle = `rgba(255, 180, 190, ${alpha})`;
+        ctx.shadowBlur = 10 * alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, STINGER_RADIUS * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     ctx.restore();

@@ -19,6 +19,24 @@ import {
   BOSS_BAT_COLLISION_RADIUS,
 } from "./tuning";
 
+// Boss sprite is much larger than BOSS_RADIUS — the creature's wingspan and
+// tendrils extend well past the collision body so it reads as a real threat.
+const SPRITE_SIZE = 200;
+let spriteImg: HTMLImageElement | null = null;
+let spriteFailed = false;
+
+function getSprite(): HTMLImageElement | null {
+  if (spriteImg) return spriteImg.complete && spriteImg.naturalWidth > 0 ? spriteImg : null;
+  if (spriteFailed) return null;
+  const img = new Image();
+  img.onerror = (): void => {
+    spriteFailed = true;
+  };
+  img.src = "/assets/sprites/boss.png";
+  spriteImg = img;
+  return null;
+}
+
 type BossPing = {
   originX: number;
   originY: number;
@@ -248,29 +266,49 @@ export class Boss {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // outer halo
-    ctx.fillStyle = `rgba(255, 100, 60, ${alpha * 0.4})`;
-    ctx.shadowColor = "rgba(255, 110, 70, 1)";
-    ctx.shadowBlur = 44 * alpha;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BOSS_RADIUS * (1.05 + 0.15 * pulse), 0, Math.PI * 2);
-    ctx.fill();
+    const img = getSprite();
+    if (img) {
+      // Sprite replaces the procedural orb. Pulse drives a subtle scale.
+      // Alpha drives the sonar-lit fade. Black bg drops out under "lighter".
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.scale(pulse, pulse);
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(
+        img,
+        -SPRITE_SIZE / 2,
+        -SPRITE_SIZE / 2,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+      );
+      ctx.restore();
+    } else {
+      // Procedural fallback during the sprite load window.
+      // Procedural fallback during the sprite load window.
+      // outer halo
+      ctx.fillStyle = `rgba(255, 100, 60, ${alpha * 0.4})`;
+      ctx.shadowColor = "rgba(255, 110, 70, 1)";
+      ctx.shadowBlur = 44 * alpha;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BOSS_RADIUS * (1.05 + 0.15 * pulse), 0, Math.PI * 2);
+      ctx.fill();
 
-    // main body
-    ctx.fillStyle = `rgba(255, 100, 60, ${alpha * 0.85})`;
-    ctx.shadowColor = "rgba(255, 100, 60, 1)";
-    ctx.shadowBlur = 28 * alpha;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BOSS_RADIUS, 0, Math.PI * 2);
-    ctx.fill();
+      // main body
+      ctx.fillStyle = `rgba(255, 100, 60, ${alpha * 0.85})`;
+      ctx.shadowColor = "rgba(255, 100, 60, 1)";
+      ctx.shadowBlur = 28 * alpha;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BOSS_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
 
-    // core
-    ctx.fillStyle = `rgba(255, 200, 160, ${alpha})`;
-    ctx.shadowColor = "rgba(255, 220, 180, 1)";
-    ctx.shadowBlur = 16 * alpha;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BOSS_RADIUS * 0.45, 0, Math.PI * 2);
-    ctx.fill();
+      // core
+      ctx.fillStyle = `rgba(255, 200, 160, ${alpha})`;
+      ctx.shadowColor = "rgba(255, 220, 180, 1)";
+      ctx.shadowBlur = 16 * alpha;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BOSS_RADIUS * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // flash overlay
     if (flashAmt > 0.01) {

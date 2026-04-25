@@ -179,6 +179,39 @@ export function drawCrashFlash(
   ctx.restore();
 }
 
+const BIOME_BOOM_DUR = 0.8;
+
+export function drawBiomeBoom(
+  ctx: CanvasRenderingContext2D,
+  canvas: Canvas,
+  now: number,
+  firedAt: number,
+  rgb: string,
+): void {
+  const age = now - firedAt;
+  if (age < 0 || age > BIOME_BOOM_DUR) return;
+  // sharp peak then long fade
+  const k = age < 0.08 ? age / 0.08 : Math.pow(1 - (age - 0.08) / (BIOME_BOOM_DUR - 0.08), 1.8);
+  const alpha = k * 0.42;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // expanding ring shockwave
+  const ringR = Math.max(canvas.width, canvas.height) * (0.15 + age * 1.4);
+  const ringW = 14 * Math.pow(1 - age / BIOME_BOOM_DUR, 1.2);
+  if (ringW > 0.5) {
+    ctx.lineWidth = ringW;
+    ctx.strokeStyle = `rgba(${rgb}, ${k * 0.55})`;
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 export function drawMenuOverlay(
   ctx: CanvasRenderingContext2D,
   canvas: Canvas,

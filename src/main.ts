@@ -3,6 +3,7 @@ import { clearPressed } from "./input";
 import { Game } from "./game";
 import { initTouch } from "./touch";
 import { initTilt } from "./tilt";
+import { drawBackground } from "./background";
 
 const canvas = setupCanvas("game");
 const game = new Game(canvas);
@@ -17,6 +18,7 @@ function frame(now: number): void {
   game.update(dt);
 
   clear(canvas);
+  drawBackground(canvas, game.distance);
   game.draw(canvas.ctx);
 
   clearPressed();

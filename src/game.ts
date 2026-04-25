@@ -19,11 +19,12 @@ import {
   drawCrashOverlay,
   drawMilestone,
   drawCrashFlash,
+  drawBiomeBoom,
   drawPowerupIndicators,
   drawSlowTint,
 } from "./hud";
 import { loadBest, saveBest, formatMeters } from "./score";
-import { updateTheme, resetTheme, biomeAt, type BiomeName } from "./biomes";
+import { updateTheme, resetTheme, biomeAt, BIOMES, type BiomeName } from "./biomes";
 import {
   playPing,
   playCrash,
@@ -39,6 +40,7 @@ import {
   playBossHit,
   playBossKill,
   playCrystalShatter,
+  playBiomeBoom,
 } from "./audio";
 import {
   START_WORLD_SPEED,
@@ -116,6 +118,8 @@ export class Game {
   private milestoneAt = -Infinity;
   private milestoneText = "";
   private crashFlashAt = -Infinity;
+  private biomeBoomAt = -Infinity;
+  private biomeBoomColor = "200, 220, 255";
   private inNearMissZone = false;
   private lastBiome: BiomeName = "abyss";
   private lastBossPingSfx = -Infinity;
@@ -181,6 +185,7 @@ export class Game {
     this.lastMilestone = 0;
     this.milestoneAt = -Infinity;
     this.crashFlashAt = -Infinity;
+    this.biomeBoomAt = -Infinity;
     this.inNearMissZone = false;
     this.powerupUntil = { slow: -Infinity, magnet: -Infinity };
     resetTheme();
@@ -217,6 +222,14 @@ export class Game {
     const y = this.canvas.height * 0.35;
     const color = name === "ember" ? "gold" : "cyan";
     this.fireflies.addPop(label, x, y, color, this.time, 1);
+
+    this.biomeBoomAt = this.uiTime;
+    this.biomeBoomColor = BIOMES[name].wallHalo;
+    this.shake = Math.max(this.shake, 14);
+    const sparkColor = name === "ember" ? "gold" : name === "void" ? "pink" : "cyan";
+    this.sparks.burst(x, y, this.time, 36, sparkColor, 320);
+    this.sparks.burst(x, y, this.time, 18, "gold", 220);
+    playBiomeBoom();
   }
 
   private handleFireflyPickup(x: number, y: number, kind: FireflyKind): void {
@@ -583,6 +596,7 @@ export class Game {
 
     drawSlowTint(ctx, this.canvas, this.powerupUntil.slow, this.uiTime);
     drawVignette(this.canvas);
+    drawBiomeBoom(ctx, this.canvas, this.uiTime, this.biomeBoomAt, this.biomeBoomColor);
     drawCrashFlash(ctx, this.canvas, this.uiTime, this.crashFlashAt);
 
     if (this.state === "menu") {

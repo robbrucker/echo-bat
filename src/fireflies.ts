@@ -36,6 +36,25 @@ const AMBIENT_MAX_ALPHA = 0.7;
 const GOLDEN_AMBIENT_RANGE_PX = 1200;
 const GOLDEN_AMBIENT_MAX_ALPHA = 0.9;
 
+const SPRITE_SIZE = 80;
+const sprites: Record<FireflyKind, { img: HTMLImageElement | null; failed: boolean }> = {
+  normal: { img: null, failed: false },
+  golden: { img: null, failed: false },
+};
+const SPRITE_PATH: Record<FireflyKind, string> = {
+  normal: "/assets/sprites/firefly_gold.png",
+  golden: "/assets/sprites/firefly_pink.png",
+};
+
+// Fireflies use the procedural circle draw — sprite path disabled per design.
+function getFireflySprite(kind: FireflyKind): HTMLImageElement | null {
+  void kind;
+  void sprites;
+  void SPRITE_PATH;
+  void SPRITE_SIZE;
+  return null;
+}
+
 export class Fireflies {
   flies: Firefly[] = [];
   pops: Pop[] = [];
@@ -201,12 +220,26 @@ export class Fireflies {
     const alpha = Math.max(ambientAlpha, litAlpha);
     if (alpha < 0.02) return;
 
-    ctx.fillStyle = `rgba(255, 210, 130, ${alpha})`;
-    ctx.shadowColor = "rgba(255, 180, 90, 1)";
-    ctx.shadowBlur = 20 * alpha;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, 3.5 + 2 * alpha, 0, Math.PI * 2);
-    ctx.fill();
+    const img = getFireflySprite("normal");
+    if (img) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(
+        img,
+        f.x - SPRITE_SIZE / 2,
+        f.y - SPRITE_SIZE / 2,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+      );
+      ctx.restore();
+    } else {
+      ctx.fillStyle = `rgba(255, 210, 130, ${alpha})`;
+      ctx.shadowColor = "rgba(255, 180, 90, 1)";
+      ctx.shadowBlur = 20 * alpha;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, 3.5 + 2 * alpha, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   private drawGolden(
@@ -231,27 +264,44 @@ export class Fireflies {
     const pulse = 0.75 + 0.25 * Math.sin(now * 3.2 + f.phase);
     const alpha = Math.min(1, base * (0.85 + 0.25 * pulse));
 
-    // wide rainbow-ish halo
-    ctx.fillStyle = `rgba(255, 170, 220, ${alpha * 0.6})`;
-    ctx.shadowColor = "rgba(255, 140, 200, 1)";
-    ctx.shadowBlur = 40 * alpha;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, (7 + 3 * alpha) * pulse, 0, Math.PI * 2);
-    ctx.fill();
+    const img = getFireflySprite("golden");
+    if (img) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(f.x, f.y);
+      // golden variant pulses larger to read as the "rare" pickup
+      ctx.scale(pulse * 1.15, pulse * 1.15);
+      ctx.drawImage(
+        img,
+        -SPRITE_SIZE / 2,
+        -SPRITE_SIZE / 2,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+      );
+      ctx.restore();
+    } else {
+      // wide rainbow-ish halo
+      ctx.fillStyle = `rgba(255, 170, 220, ${alpha * 0.6})`;
+      ctx.shadowColor = "rgba(255, 140, 200, 1)";
+      ctx.shadowBlur = 40 * alpha;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, (7 + 3 * alpha) * pulse, 0, Math.PI * 2);
+      ctx.fill();
 
-    // tinted secondary
-    ctx.fillStyle = `rgba(255, 220, 180, ${alpha * 0.7})`;
-    ctx.shadowColor = "rgba(255, 200, 140, 1)";
-    ctx.shadowBlur = 20 * alpha;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, 4.5 * pulse, 0, Math.PI * 2);
-    ctx.fill();
+      // tinted secondary
+      ctx.fillStyle = `rgba(255, 220, 180, ${alpha * 0.7})`;
+      ctx.shadowColor = "rgba(255, 200, 140, 1)";
+      ctx.shadowBlur = 20 * alpha;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, 4.5 * pulse, 0, Math.PI * 2);
+      ctx.fill();
 
-    // bright core
-    ctx.fillStyle = `rgba(255, 250, 240, ${alpha})`;
-    ctx.shadowBlur = 8 * alpha;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, 2.2 * pulse, 0, Math.PI * 2);
-    ctx.fill();
+      // bright core
+      ctx.fillStyle = `rgba(255, 250, 240, ${alpha})`;
+      ctx.shadowBlur = 8 * alpha;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, 2.2 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }

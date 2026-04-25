@@ -17,6 +17,22 @@ import {
   CRYSTAL_FADE_SEC,
 } from "./tuning";
 
+const SPRITE_SIZE = 120;
+let spriteImg: HTMLImageElement | null = null;
+let spriteFailed = false;
+
+function getSprite(): HTMLImageElement | null {
+  if (spriteImg) return spriteImg.complete && spriteImg.naturalWidth > 0 ? spriteImg : null;
+  if (spriteFailed) return null;
+  const img = new Image();
+  img.onerror = (): void => {
+    spriteFailed = true;
+  };
+  img.src = "/assets/sprites/crystal.png";
+  spriteImg = img;
+  return null;
+}
+
 export type CrystalAttach = "ceiling" | "floor";
 
 export type Crystal = {
@@ -151,43 +167,63 @@ export class Crystals {
 
       ctx.save();
 
-      // outer glow halo (wider when lit by sonar)
-      ctx.fillStyle = `rgba(255, 220, 140, ${a * 0.22})`;
-      ctx.shadowColor = "rgba(255, 210, 120, 1)";
-      ctx.shadowBlur = 18 * a;
-      ctx.beginPath();
-      ctx.arc(cx, (anchorY + tipY) * 0.5, longAxis * 1.1, 0, Math.PI * 2);
-      ctx.fill();
+      const img = getSprite();
+      if (img) {
+        // Center the sprite on the midpoint between wall anchor and tip,
+        // matching where the halo used to sit. Flip vertically when the
+        // crystal hangs from the ceiling so the broader base sits on the wall.
+        const centerY = (anchorY + tipY) * 0.5;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(cx, centerY);
+        if (inward === 1) ctx.scale(1, -1); // ceiling-mounted: flip
+        ctx.drawImage(
+          img,
+          -SPRITE_SIZE / 2,
+          -SPRITE_SIZE / 2,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+        );
+        ctx.restore();
+      } else {
+        // outer glow halo (wider when lit by sonar)
+        ctx.fillStyle = `rgba(255, 220, 140, ${a * 0.22})`;
+        ctx.shadowColor = "rgba(255, 210, 120, 1)";
+        ctx.shadowBlur = 18 * a;
+        ctx.beginPath();
+        ctx.arc(cx, (anchorY + tipY) * 0.5, longAxis * 1.1, 0, Math.PI * 2);
+        ctx.fill();
 
-      // diamond fill
-      ctx.beginPath();
-      ctx.moveTo(cx, anchorY);               // base on wall
-      ctx.lineTo(cx + shortAxis, midY);      // right shoulder
-      ctx.lineTo(cx, tipY);                  // tip into gap
-      ctx.lineTo(cx - shortAxis, midY);      // left shoulder
-      ctx.closePath();
+        // diamond fill
+        ctx.beginPath();
+        ctx.moveTo(cx, anchorY);               // base on wall
+        ctx.lineTo(cx + shortAxis, midY);      // right shoulder
+        ctx.lineTo(cx, tipY);                  // tip into gap
+        ctx.lineTo(cx - shortAxis, midY);      // left shoulder
+        ctx.closePath();
 
-      ctx.fillStyle = `rgba(255, 220, 140, ${a})`;
-      ctx.shadowColor = "rgba(255, 210, 120, 1)";
-      ctx.shadowBlur = 12 * a;
-      ctx.fill();
+        ctx.fillStyle = `rgba(255, 220, 140, ${a})`;
+        ctx.shadowColor = "rgba(255, 210, 120, 1)";
+        ctx.shadowBlur = 12 * a;
+        ctx.fill();
 
-      // cyan rim
-      ctx.strokeStyle = `rgba(170, 255, 240, ${a})`;
-      ctx.lineWidth = 1.4;
-      ctx.shadowColor = "rgba(150, 240, 255, 1)";
-      ctx.shadowBlur = 8 * a;
-      ctx.stroke();
+        // cyan rim
+        ctx.strokeStyle = `rgba(170, 255, 240, ${a})`;
+        ctx.lineWidth = 1.4;
+        ctx.shadowColor = "rgba(150, 240, 255, 1)";
+        ctx.shadowBlur = 8 * a;
+        ctx.stroke();
 
-      // bright inner highlight (small pale triangle near the tip)
-      ctx.beginPath();
-      ctx.moveTo(cx, tipY);
-      ctx.lineTo(cx + shortAxis * 0.4, midY + inward * longAxis * 0.12);
-      ctx.lineTo(cx - shortAxis * 0.4, midY + inward * longAxis * 0.12);
-      ctx.closePath();
-      ctx.fillStyle = `rgba(255, 250, 220, ${a * 0.85})`;
-      ctx.shadowBlur = 0;
-      ctx.fill();
+        // bright inner highlight (small pale triangle near the tip)
+        ctx.beginPath();
+        ctx.moveTo(cx, tipY);
+        ctx.lineTo(cx + shortAxis * 0.4, midY + inward * longAxis * 0.12);
+        ctx.lineTo(cx - shortAxis * 0.4, midY + inward * longAxis * 0.12);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(255, 250, 220, ${a * 0.85})`;
+        ctx.shadowBlur = 0;
+        ctx.fill();
+      }
 
       ctx.restore();
     }

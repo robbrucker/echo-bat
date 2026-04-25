@@ -25,6 +25,29 @@ type Powerup = {
 
 const FADE_SEC = 1.1;
 
+const SPRITE_SIZE = 130;
+const sprites: Record<PowerupKind, { img: HTMLImageElement | null; failed: boolean }> = {
+  slow: { img: null, failed: false },
+  magnet: { img: null, failed: false },
+};
+const SPRITE_PATH: Record<PowerupKind, string> = {
+  slow: "/assets/sprites/powerup_slow.png",
+  magnet: "/assets/sprites/powerup_magnet.png",
+};
+
+function getPowerupSprite(kind: PowerupKind): HTMLImageElement | null {
+  const slot = sprites[kind];
+  if (slot.img) return slot.img.complete && slot.img.naturalWidth > 0 ? slot.img : null;
+  if (slot.failed) return null;
+  const img = new Image();
+  img.onerror = (): void => {
+    slot.failed = true;
+  };
+  img.src = SPRITE_PATH[kind];
+  slot.img = img;
+  return null;
+}
+
 export const POWERUP_COLOR: Record<
   PowerupKind,
   { halo: string; core: string; accent: string }
@@ -138,26 +161,44 @@ export class Powerups {
 
       const r = 14;
 
-      // outer glow hex
-      ctx.fillStyle = `rgba(${col.halo}, ${alpha * 0.45})`;
-      ctx.shadowColor = `rgba(${col.halo}, 1)`;
-      ctx.shadowBlur = 36 * alpha;
-      drawHex(ctx, p.x, p.y, r * 1.4 * pulse, p.spin);
+      const img = getPowerupSprite(p.kind);
+      if (img) {
+        // Pulse drives scale; spin keeps the existing rotation animation.
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.spin);
+        ctx.scale(pulse, pulse);
+        ctx.drawImage(
+          img,
+          -SPRITE_SIZE / 2,
+          -SPRITE_SIZE / 2,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+        );
+        ctx.restore();
+      } else {
+        // outer glow hex
+        ctx.fillStyle = `rgba(${col.halo}, ${alpha * 0.45})`;
+        ctx.shadowColor = `rgba(${col.halo}, 1)`;
+        ctx.shadowBlur = 36 * alpha;
+        drawHex(ctx, p.x, p.y, r * 1.4 * pulse, p.spin);
 
-      // crystal
-      ctx.fillStyle = `rgba(${col.core}, ${alpha})`;
-      ctx.shadowColor = `rgba(${col.accent}, 1)`;
-      ctx.shadowBlur = 14 * alpha;
-      drawHex(ctx, p.x, p.y, r * pulse, p.spin);
+        // crystal
+        ctx.fillStyle = `rgba(${col.core}, ${alpha})`;
+        ctx.shadowColor = `rgba(${col.accent}, 1)`;
+        ctx.shadowBlur = 14 * alpha;
+        drawHex(ctx, p.x, p.y, r * pulse, p.spin);
 
-      // inner glyph
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.fillStyle = `rgba(30, 20, 50, ${alpha * 0.85})`;
-      ctx.shadowBlur = 0;
-      if (p.kind === "slow") drawSlowGlyph(ctx, r * 0.55);
-      else drawMagnetGlyph(ctx, r * 0.6);
-      ctx.restore();
+        // inner glyph
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.fillStyle = `rgba(30, 20, 50, ${alpha * 0.85})`;
+        ctx.shadowBlur = 0;
+        if (p.kind === "slow") drawSlowGlyph(ctx, r * 0.55);
+        else drawMagnetGlyph(ctx, r * 0.6);
+        ctx.restore();
+      }
     }
 
     ctx.restore();

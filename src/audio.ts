@@ -489,3 +489,67 @@ export function playCrystalShatter(): void {
   ng.connect(master);
   src.start(t);
 }
+
+export function playBiomeBoom(): void {
+  const c = ensureCtx();
+  const m = master;
+  if (!c || !m) return;
+  const t = c.currentTime;
+
+  // sub thump
+  const sub = c.createOscillator();
+  const subGain = c.createGain();
+  sub.type = "sine";
+  sub.frequency.setValueAtTime(95, t);
+  sub.frequency.exponentialRampToValueAtTime(38, t + 0.55);
+  subGain.gain.setValueAtTime(0.0001, t);
+  subGain.gain.exponentialRampToValueAtTime(0.5, t + 0.012);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+  sub.connect(subGain);
+  subGain.connect(m);
+  sub.start(t);
+  sub.stop(t + 0.75);
+
+  // ascending shimmer chord
+  const notes: [number, number][] = [
+    [392, 0.04], // G4
+    [523, 0.10], // C5
+    [784, 0.18], // G5
+    [1047, 0.26], // C6
+  ];
+  for (const [freq, delay] of notes) {
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, t + delay);
+    gain.gain.exponentialRampToValueAtTime(0.11, t + delay + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.9);
+    osc.connect(gain);
+    gain.connect(m);
+    osc.start(t + delay);
+    osc.stop(t + delay + 0.95);
+  }
+
+  // filtered noise sweep for "whoosh"
+  const len = 0.55;
+  const buf = c.createBuffer(1, Math.floor(c.sampleRate * len), c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    const env = Math.pow(1 - i / data.length, 1.6);
+    data[i] = (Math.random() * 2 - 1) * env;
+  }
+  const noise = c.createBufferSource();
+  noise.buffer = buf;
+  const nf = c.createBiquadFilter();
+  nf.type = "bandpass";
+  nf.frequency.setValueAtTime(400, t);
+  nf.frequency.exponentialRampToValueAtTime(3500, t + 0.5);
+  nf.Q.value = 1.5;
+  const ng = c.createGain();
+  ng.gain.value = 0.18;
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(m);
+  noise.start(t);
+}

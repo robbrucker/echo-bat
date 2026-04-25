@@ -13,6 +13,31 @@ const MAX_SPEED = 360;
 const DAMPING_PER_SEC = 6;
 const FLAP_HZ = 4.5;
 
+// Drawn size of the bat sprite. The PNG occupies ~60% of its 1024px frame, so
+// at 52px the visible creature reads ~31px wide — bigger than the original
+// procedural 22px, the painted detail can carry the screen.
+const SPRITE_SIZE = 52;
+const AURA_RADIUS = 14;
+const AURA_BLUR = 36;
+const TRAIL_LEN = 10;
+const TRAIL_SAMPLE_EVERY = 2; // every other update frame
+let spriteImg: HTMLImageElement | null = null;
+let spriteFailed = false;
+
+function getSprite(): HTMLImageElement | null {
+  if (spriteImg) return spriteImg.complete && spriteImg.naturalWidth > 0 ? spriteImg : null;
+  if (spriteFailed) return null;
+  const img = new Image();
+  img.onerror = (): void => {
+    spriteFailed = true;
+  };
+  img.src = "/assets/sprites/bat.png";
+  spriteImg = img;
+  return null;
+}
+
+type TrailSample = { y: number; tilt: number };
+
 export class Bat {
   x: number;
   y: number;
@@ -21,6 +46,8 @@ export class Bat {
   private flashTime = -Infinity;
   private dashCooldown = 0;
   private dashActiveUntil = -Infinity;
+  private trail: TrailSample[] = [];
+  private trailTick = 0;
 
   constructor(x: number, y: number) {
     this.x = x;
@@ -67,6 +94,13 @@ export class Bat {
     this.y += this.vy * dt;
     this.flapTime += dt;
 
+    this.trailTick++;
+    if (this.trailTick % TRAIL_SAMPLE_EVERY === 0) {
+      const tilt = Math.max(-0.35, Math.min(0.35, this.vy / 550));
+      this.trail.push({ y: this.y, tilt });
+      if (this.trail.length > TRAIL_LEN) this.trail.shift();
+    }
+
     const margin = 20;
     if (this.y < margin) {
       this.y = margin;
@@ -90,15 +124,39 @@ export class Bat {
     const wingSpread = 1 + flap * 0.28;
 
     ctx.save();
+
+    // sonar wake — fading echoes of recent positions, drawn before the main bat
+    // so they sit behind it. Stronger when dashing.
+    const dashing = this.isDashing(now);
+    const trailBoost = dashing ? 1.4 : 1;
+    const N = this.trail.length;
+    if (N > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < N; i++) {
+        const t = (i + 1) / N; // 0..1, newest = 1
+        const sample = this.trail[i]!;
+        const alpha = Math.pow(t, 1.6) * 0.18 * trailBoost;
+        const r = (3 + 4 * t) * trailBoost;
+        ctx.fillStyle = `rgba(180, 230, 255, ${alpha})`;
+        ctx.shadowColor = "rgba(150, 220, 255, 1)";
+        ctx.shadowBlur = 16 * t * trailBoost;
+        ctx.beginPath();
+        ctx.arc(this.x, sample.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     ctx.translate(this.x, this.y);
 
     // base aura
     ctx.save();
     ctx.fillStyle = PALETTE.batGlow;
     ctx.shadowColor = PALETTE.batGlow;
-    ctx.shadowBlur = 24;
+    ctx.shadowBlur = AURA_BLUR;
     ctx.beginPath();
-    ctx.arc(0, 0, 9, 0, Math.PI * 2);
+    ctx.arc(0, 0, AURA_RADIUS, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -117,33 +175,51 @@ export class Bat {
 
     ctx.rotate(tilt);
 
-    ctx.fillStyle = PALETTE.bat;
-    ctx.shadowColor = PALETTE.bat;
-    ctx.shadowBlur = 6;
+    const img = getSprite();
+    if (img) {
+      // Black background of the source PNG drops out under "lighter" — no
+      // alpha-channel preprocessing needed. Vertical squash drives the flap.
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.scale(1, wingSpread);
+      ctx.drawImage(
+        img,
+        -SPRITE_SIZE / 2,
+        -SPRITE_SIZE / 2,
+        SPRITE_SIZE,
+        SPRITE_SIZE,
+      );
+      ctx.restore();
+    } else {
+      // Procedural fallback while the sprite loads (also runs if it fails).
+      ctx.fillStyle = PALETTE.bat;
+      ctx.shadowColor = PALETTE.bat;
+      ctx.shadowBlur = 6;
 
-    ctx.beginPath();
-    ctx.moveTo(9, 0);
-    ctx.lineTo(-5, -3.5);
-    ctx.lineTo(-5, 3.5);
-    ctx.closePath();
-    ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(9, 0);
+      ctx.lineTo(-5, -3.5);
+      ctx.lineTo(-5, 3.5);
+      ctx.closePath();
+      ctx.fill();
 
-    ctx.save();
-    ctx.scale(1, wingSpread);
-    ctx.beginPath();
-    ctx.moveTo(-1, -2.5);
-    ctx.lineTo(-13, -9);
-    ctx.lineTo(-9, -1);
-    ctx.closePath();
-    ctx.fill();
+      ctx.save();
+      ctx.scale(1, wingSpread);
+      ctx.beginPath();
+      ctx.moveTo(-1, -2.5);
+      ctx.lineTo(-13, -9);
+      ctx.lineTo(-9, -1);
+      ctx.closePath();
+      ctx.fill();
 
-    ctx.beginPath();
-    ctx.moveTo(-1, 2.5);
-    ctx.lineTo(-13, 9);
-    ctx.lineTo(-9, 1);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+      ctx.beginPath();
+      ctx.moveTo(-1, 2.5);
+      ctx.lineTo(-13, 9);
+      ctx.lineTo(-9, 1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
 
     ctx.restore();
   }

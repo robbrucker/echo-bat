@@ -26,6 +26,18 @@ type Moth = {
 
 const FADE_SEC = 1.0;
 
+const SPRITE_SIZE = 96;
+let spriteImg: HTMLImageElement | null = null;
+let spriteFailed = false;
+
+// Moths use the procedural draw — sprite path disabled per design.
+function getSprite(): HTMLImageElement | null {
+  void spriteImg;
+  void spriteFailed;
+  void SPRITE_SIZE;
+  return null;
+}
+
 export class Moths {
   items: Moth[] = [];
   private spawnedDistance = 0;
@@ -136,51 +148,67 @@ export class Moths {
       ctx.save();
       ctx.translate(m.x, m.y);
 
-      // halo
-      ctx.fillStyle = `rgba(255, 180, 210, ${alpha * 0.5})`;
-      ctx.shadowColor = "rgba(255, 140, 180, 1)";
-      ctx.shadowBlur = 26 * alpha;
-      ctx.beginPath();
-      ctx.arc(0, 0, 10 + 4 * alpha, 0, Math.PI * 2);
-      ctx.fill();
+      const img = getSprite();
+      if (img) {
+        // wingY drives a vertical squash so the flap animation reads on the sprite.
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.scale(1, wingY);
+        ctx.drawImage(
+          img,
+          -SPRITE_SIZE / 2,
+          -SPRITE_SIZE / 2,
+          SPRITE_SIZE,
+          SPRITE_SIZE,
+        );
+        ctx.restore();
+      } else {
+        // halo
+        ctx.fillStyle = `rgba(255, 180, 210, ${alpha * 0.5})`;
+        ctx.shadowColor = "rgba(255, 140, 180, 1)";
+        ctx.shadowBlur = 26 * alpha;
+        ctx.beginPath();
+        ctx.arc(0, 0, 10 + 4 * alpha, 0, Math.PI * 2);
+        ctx.fill();
 
-      // wings (two triangles, flapping)
-      ctx.fillStyle = `rgba(255, 210, 170, ${alpha})`;
-      ctx.shadowBlur = 10 * alpha;
-      ctx.save();
-      ctx.scale(1, wingY);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(-9, -7);
-      ctx.lineTo(-5, -2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(9, -7);
-      ctx.lineTo(5, -2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(-9, 7);
-      ctx.lineTo(-5, 2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(9, 7);
-      ctx.lineTo(5, 2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+        // wings (two triangles, flapping)
+        ctx.fillStyle = `rgba(255, 210, 170, ${alpha})`;
+        ctx.shadowBlur = 10 * alpha;
+        ctx.save();
+        ctx.scale(1, wingY);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-9, -7);
+        ctx.lineTo(-5, -2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(9, -7);
+        ctx.lineTo(5, -2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-9, 7);
+        ctx.lineTo(-5, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(9, 7);
+        ctx.lineTo(5, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
 
-      // body core
-      ctx.fillStyle = `rgba(255, 240, 220, ${alpha})`;
-      ctx.shadowBlur = 6 * alpha;
-      ctx.beginPath();
-      ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
-      ctx.fill();
+        // body core
+        ctx.fillStyle = `rgba(255, 240, 220, ${alpha})`;
+        ctx.shadowBlur = 6 * alpha;
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.restore();
     }
