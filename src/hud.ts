@@ -1,6 +1,7 @@
 import type { Canvas } from "./render";
 import { formatMeters } from "./score";
 import { POWERUP_COLOR, type PowerupKind } from "./powerups";
+import { isTiltActive } from "./tilt";
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
@@ -245,16 +246,26 @@ export function drawMenuOverlay(
   // controls
   ctx.fillStyle = "rgba(160, 180, 210, 0.5)";
   ctx.font = `12px ${MONO}`;
-  ctx.fillText(
-    IS_TOUCH ? "tilt — steer     tap — dash" : "space — dash     ↑ ↓ — steer",
-    cx,
-    cy + 46,
-  );
+  if (IS_TOUCH) {
+    ctx.fillText("tap top/bottom or tilt — steer", cx, cy + 38);
+    ctx.fillText("tap anywhere — dash", cx, cy + 56);
+    // status: shows whether iOS motion permission was granted
+    const tiltOn = isTiltActive();
+    ctx.fillStyle = tiltOn
+      ? "rgba(150, 255, 190, 0.6)"
+      : "rgba(255, 200, 150, 0.45)";
+    ctx.font = `10px ${MONO}`;
+    ctx.fillText(tiltOn ? "tilt: on" : "tilt: off — top/bottom still works", cx, cy + 74);
+  } else {
+    ctx.fillText("space — dash     ↑ ↓ — steer", cx, cy + 46);
+  }
 
   // best
   if (best > 0) {
     ctx.fillStyle = "rgba(150, 255, 190, 0.7)";
-    ctx.fillText(`best  ${formatMeters(best)}`, cx, cy + 68);
+    ctx.font = `12px ${MONO}`;
+    const bestY = IS_TOUCH ? cy + 94 : cy + 68;
+    ctx.fillText(`best  ${formatMeters(best)}`, cx, bestY);
   }
 
   // prompt

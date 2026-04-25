@@ -81,16 +81,14 @@ export class Bat {
   update(dt: number, canvas: Canvas): void {
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
 
-    // Analog tilt overrides keyboard when present, so a small phone tilt
-    // produces a small input — no more "binary key held = max accel".
-    let input = 0;
-    const tilt = getTiltSteer();
-    if (Math.abs(tilt) > 0.01) {
-      input = tilt;
-    } else {
-      if (isHeld("ArrowUp") || isHeld("KeyW")) input -= 1;
-      if (isHeld("ArrowDown") || isHeld("KeyS")) input += 1;
-    }
+    // Combine analog tilt and keyboard/touch-zone inputs additively. Either
+    // source contributes; clamped at the end. Lets iPad-flat-with-touch-zones
+    // and iPhone-tilt both work, and lets keyboard players still steer.
+    let input = getTiltSteer();
+    if (isHeld("ArrowUp") || isHeld("KeyW")) input -= 1;
+    if (isHeld("ArrowDown") || isHeld("KeyS")) input += 1;
+    if (input > 1) input = 1;
+    if (input < -1) input = -1;
 
     const speedCap = Math.max(MAX_SPEED, Math.abs(this.vy));
     if (input !== 0) {

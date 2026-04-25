@@ -1,15 +1,12 @@
 // Mobile touch controls for Echo Bat. Synthesizes KeyboardEvents so input.ts's
 // existing listeners pick them up, keeping touch input coexistent with keyboard.
 //
-// Two modes:
-//   - Tilt active (post-permission-grant): every touch is just a dash tap.
-//     Steering comes entirely from the analog tilt source.
-//   - Tilt unavailable (denied / desktop touch / pre-grant): top-and-bottom
-//     touch zones provide ArrowUp/ArrowDown hold-steering, plus tap = dash.
+// Top/bottom touch zones are ALWAYS active (works on iPad held flat, where
+// tilt provides no useful input). When the user does tilt, bat.ts gives the
+// analog tilt source precedence over keyboard input, so the two coexist:
+// tilt wins when present, zones win when the device is still.
 //
-// The tap window is generous because real fingers aren't laser-precise.
-
-import { isTiltActive } from "./tilt";
+// Tap window is generous because real fingers aren't laser-precise.
 
 const TAP_MAX_MS = 300;
 const TAP_MAX_MOVE_PX = 40;
@@ -58,13 +55,11 @@ export function initTouch(canvas: HTMLCanvasElement): void {
 
   const onTouchStart = (e: TouchEvent): void => {
     e.preventDefault();
-    const useZoneSteer = !isTiltActive();
     const rect = canvas.getBoundingClientRect();
     for (const t of Array.from(e.changedTouches)) {
       const localY = t.clientY - rect.top;
       const isPrimary = primaryId === null;
-      const steer =
-        useZoneSteer && isPrimary ? zoneForY(localY, rect.height) : null;
+      const steer = isPrimary ? zoneForY(localY, rect.height) : null;
       touches.set(t.identifier, {
         id: t.identifier,
         startX: t.clientX,
@@ -76,14 +71,13 @@ export function initTouch(canvas: HTMLCanvasElement): void {
       });
       if (isPrimary) {
         primaryId = t.identifier;
-        if (useZoneSteer) setSteer(steer);
+        setSteer(steer);
       }
     }
   };
 
   const onTouchMove = (e: TouchEvent): void => {
     e.preventDefault();
-    const useZoneSteer = !isTiltActive();
     const rect = canvas.getBoundingClientRect();
     for (const t of Array.from(e.changedTouches)) {
       const tracked = touches.get(t.identifier);
@@ -92,7 +86,7 @@ export function initTouch(canvas: HTMLCanvasElement): void {
       const dy = t.clientY - tracked.startY;
       const dist = Math.hypot(dx, dy);
       if (dist > tracked.maxMove) tracked.maxMove = dist;
-      if (useZoneSteer && tracked.isPrimary) {
+      if (tracked.isPrimary) {
         const localY = t.clientY - rect.top;
         tracked.steer = zoneForY(localY, rect.height);
         setSteer(tracked.steer);
@@ -120,7 +114,7 @@ export function initTouch(canvas: HTMLCanvasElement): void {
       if (next) {
         next.isPrimary = true;
         primaryId = next.id;
-        if (!isTiltActive()) setSteer(next.steer);
+        setSteer(next.steer);
       } else {
         setSteer(null);
       }

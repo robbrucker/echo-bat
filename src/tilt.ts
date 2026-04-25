@@ -44,39 +44,52 @@ function onOrientation(e: DeviceOrientationEvent): void {
   analogSteer = -sign * t;
 }
 
-async function requestPermissionIfNeeded(): Promise<boolean> {
-  if (typeof DeviceOrientationEvent === "undefined") return false;
+// Synchronously called from the gesture handler. iOS 13+ requires
+// requestPermission() to fire under a user-activation context — using a
+// .then() chain here (instead of async/await across function boundaries)
+// keeps the call directly inside the gesture handler with no await between
+// them, which is what Safari actually checks for.
+function syncEnableTilt(): void {
+  if (enabled) return;
+  if (typeof DeviceOrientationEvent === "undefined") return;
   const anyEvt = DeviceOrientationEvent as unknown as MaybePermissionDOE;
-  if (typeof anyEvt.requestPermission !== "function") return true;
-  try {
-    const result = await anyEvt.requestPermission();
-    return result === "granted";
-  } catch {
-    return false;
-  }
-}
 
-async function enableTilt(): Promise<boolean> {
-  if (enabled) return true;
-  const granted = await requestPermissionIfNeeded();
-  if (!granted) return false;
-  window.addEventListener("deviceorientation", onOrientation);
-  enabled = true;
-  return true;
+  if (typeof anyEvt.requestPermission !== "function") {
+    // Android / older iOS — no permission required.
+    window.addEventListener("deviceorientation", onOrientation);
+    enabled = true;
+    return;
+  }
+
+  try {
+    anyEvt
+      .requestPermission()
+      .then((result) => {
+        if (result === "granted") {
+          window.addEventListener("deviceorientation", onOrientation);
+          enabled = true;
+        }
+      })
+      .catch(() => {
+        // denied or unavailable — fallback steering (touch zones / keyboard) still works
+      });
+  } catch {
+    // already handled / rejected synchronously
+  }
 }
 
 export function initTilt(): void {
   if (typeof window === "undefined") return;
-  // iOS 13+ requires a user gesture to grant orientation permission.
-  // Attach one-shot listeners on the earliest gesture; remove after attempt.
+  // Attach one-shot listeners on the earliest user gesture; default
+  // (non-passive) so transient-activation isn't dropped by Safari.
   const attempt = (): void => {
     window.removeEventListener("touchstart", attempt);
     window.removeEventListener("pointerdown", attempt);
     window.removeEventListener("keydown", attempt);
-    void enableTilt();
+    syncEnableTilt();
   };
-  window.addEventListener("touchstart", attempt, { passive: true, once: true });
-  window.addEventListener("pointerdown", attempt, { passive: true, once: true });
+  window.addEventListener("touchstart", attempt, { once: true });
+  window.addEventListener("pointerdown", attempt, { once: true });
   window.addEventListener("keydown", attempt, { once: true });
 }
 
