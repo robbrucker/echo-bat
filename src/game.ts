@@ -350,10 +350,15 @@ export class Game {
 
   private updatePlaying(gameDt: number): void {
     if (wasPressed("Space")) {
+      // Always ping on tap so the player gets feedback even when the dash
+      // is on cooldown — sonar reveal is the core "ping the dark" mechanic
+      // and shouldn't be gated on the dash being available.
+      this.sonar.emit(this.bat, this.time);
+      this.bat.flash(this.time);
+      playPing();
+      // Dash if it's off cooldown.
       if (this.bat.dash(this.time)) {
-        this.sonar.emit(this.bat, this.time);
         playDash();
-        playPing();
         this.sparks.burst(this.bat.x, this.bat.y, this.time, 10, "cyan", 220);
       }
     }

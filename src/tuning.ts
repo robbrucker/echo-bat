@@ -1,6 +1,6 @@
-export const START_WORLD_SPEED = 260;
-export const MAX_WORLD_SPEED = 400;
-export const DIFFICULTY_FULL_DISTANCE = 4000;
+export const START_WORLD_SPEED = 210;
+export const MAX_WORLD_SPEED = 380;
+export const DIFFICULTY_FULL_DISTANCE = 6500;
 export const SPEED_ACCEL_PER_PX = 0.0085;
 
 export const CAVE_START_MIN_GAP = 270;
