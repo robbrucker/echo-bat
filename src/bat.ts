@@ -9,8 +9,8 @@ import {
   DASH_ACTIVE_SEC,
 } from "./tuning";
 
-const ACCEL = 1400;
-const MAX_SPEED = 360;
+const ACCEL = 1050;
+const MAX_SPEED = 290;
 const DAMPING_PER_SEC = 6;
 const FLAP_HZ = 4.5;
 
