@@ -1,14 +1,19 @@
 import type { Canvas } from "./render";
 import { formatMeters } from "./score";
 import { POWERUP_COLOR, type PowerupKind } from "./powerups";
-import { getTiltStatus } from "./tilt";
+import { Capacitor } from "@capacitor/core";
+import { getTiltStatus, getLastAccel, getTiltSteer } from "./tilt";
+
+const IS_NATIVE = Capacitor.isNativePlatform();
 
 const TILT_STATUS_TEXT: Record<ReturnType<typeof getTiltStatus>, string> = {
-  unsupported: "tilt: not supported on this browser",
-  pending: "tilt: tap to enable",
-  denied: "tilt: denied — Settings > Safari > Motion",
+  unsupported: "tilt: not supported",
+  pending: "tilt: starting up...",
+  denied: IS_NATIVE
+    ? "tilt: native bridge unavailable"
+    : "tilt: denied — Settings > Safari > Motion",
   granted: "tilt: on",
-  "no-events": "tilt: granted, awaiting motion data",
+  "no-events": "tilt: starting, awaiting first reading",
 };
 
 const TILT_STATUS_ON: Record<ReturnType<typeof getTiltStatus>, boolean> = {
@@ -263,14 +268,27 @@ export function drawMenuOverlay(
   ctx.fillStyle = "rgba(160, 180, 210, 0.5)";
   ctx.font = `12px ${MONO}`;
   if (IS_TOUCH) {
-    ctx.fillText("tap top/bottom or tilt — steer", cx, cy + 38);
-    ctx.fillText("tap anywhere — dash", cx, cy + 56);
+    ctx.fillText("tilt — steer     tap — dash", cx, cy + 38);
     const status = getTiltStatus();
     ctx.fillStyle = TILT_STATUS_ON[status]
       ? "rgba(150, 255, 190, 0.6)"
       : "rgba(255, 200, 150, 0.45)";
     ctx.font = `10px ${MONO}`;
-    ctx.fillText(TILT_STATUS_TEXT[status], cx, cy + 74);
+    ctx.fillText(TILT_STATUS_TEXT[status], cx, cy + 56);
+
+    // Live motion-data debug — proves whether accel events actually flow.
+    // Stays subtle (small, dim) so it doesn't clutter the menu in production.
+    const accel = getLastAccel();
+    if (accel) {
+      const steer = getTiltSteer();
+      ctx.fillStyle = "rgba(140, 200, 240, 0.45)";
+      ctx.font = `9px ${MONO}`;
+      ctx.fillText(
+        `g=(${accel.x.toFixed(2)}, ${accel.y.toFixed(2)}, ${accel.z.toFixed(2)})  steer=${steer.toFixed(2)}`,
+        cx,
+        cy + 72,
+      );
+    }
   } else {
     ctx.fillText("space — dash     ↑ ↓ — steer", cx, cy + 46);
   }
@@ -279,7 +297,7 @@ export function drawMenuOverlay(
   if (best > 0) {
     ctx.fillStyle = "rgba(150, 255, 190, 0.7)";
     ctx.font = `12px ${MONO}`;
-    const bestY = IS_TOUCH ? cy + 94 : cy + 68;
+    const bestY = IS_TOUCH ? cy + 92 : cy + 68;
     ctx.fillText(`best  ${formatMeters(best)}`, cx, bestY);
   }
 

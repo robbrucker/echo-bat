@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { setupCanvas, clear } from "./render";
 import { clearPressed } from "./input";
 import { Game } from "./game";
@@ -9,6 +10,13 @@ const canvas = setupCanvas("game");
 const game = new Game(canvas);
 initTouch(canvas.el);
 initTilt();
+
+// Hide the "source" link in the native app — feels out of place there and
+// links out of the App Store sandbox. Web build keeps the link.
+if (Capacitor.isNativePlatform()) {
+  const ghLink = document.querySelector<HTMLElement>(".gh-link");
+  if (ghLink) ghLink.style.display = "none";
+}
 
 let last = performance.now();
 function frame(now: number): void {

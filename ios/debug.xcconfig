@@ -1,1 +1,6 @@
 CAPACITOR_DEBUG = true
+
+// Auto-signing setup — Xcode picks up this team for both Debug and Release
+// builds and provisions automatically. Change to your own Team ID if you fork.
+DEVELOPMENT_TEAM = TUU3PA934C
+CODE_SIGN_STYLE = Automatic

@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Configure audio so the game's WebAudio output ignores the iOS silent
+        // switch and mixes politely with other apps. .playback honors playback
+        // even when ringer is silent; .mixWithOthers means we don't kill
+        // the user's music when the app launches.
+        do {
+            try AVAudioSession.sharedInstance().setCategory(
+                .playback,
+                mode: .default,
+                options: [.mixWithOthers]
+            )
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            // If audio setup fails the game still runs, just silently.
+            NSLog("Audio session setup failed: \(error.localizedDescription)")
+        }
         return true
     }
 
