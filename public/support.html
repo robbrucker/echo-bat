@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050814" />
+    <meta name="description" content="Support for Echo Bat." />
+    <title>Echo Bat — Support</title>
+    <style>
+      :root {
+        --bg: #050814;
+        --bg-mid: #0a1024;
+        --text: #d3e0f0;
+        --text-dim: #889ab2;
+        --accent: #8ad0ff;
+        --rule: rgba(120, 200, 255, 0.18);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; min-height: 100%; }
+      body {
+        background:
+          radial-gradient(circle at 20% 0%, rgba(20, 50, 90, 0.45), transparent 55%),
+          radial-gradient(circle at 80% 100%, rgba(40, 20, 90, 0.35), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font: 15px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding: 6vh 24px 12vh;
+      }
+      main { max-width: 720px; margin: 0 auto; }
+      h1 {
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: rgba(230, 245, 255, 0.98);
+        text-shadow: 0 0 24px rgba(140, 220, 255, 0.45);
+        margin: 0 0 8px;
+      }
+      .subtitle {
+        color: var(--text-dim);
+        margin: 0 0 36px;
+        font-size: 13px;
+      }
+      h2 {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        margin: 32px 0 8px;
+        text-transform: uppercase;
+      }
+      p, li { color: var(--text); margin: 0 0 12px; }
+      ul { padding-left: 18px; margin: 0 0 12px; }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px dashed rgba(138, 208, 255, 0.5);
+      }
+      a:hover { border-bottom-style: solid; }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--rule);
+        margin: 40px 0 24px;
+      }
+      .footer {
+        font-size: 12px;
+        color: var(--text-dim);
+      }
+      .contact-card {
+        background: rgba(20, 30, 60, 0.5);
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
+      .contact-card a {
+        font-size: 17px;
+        font-weight: 600;
+        color: rgba(230, 245, 255, 0.98);
+      }
+      strong { color: rgba(230, 245, 255, 0.95); }
+      code {
+        background: rgba(120, 200, 255, 0.08);
+        border: 1px solid var(--rule);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Support</h1>
+      <p class="subtitle">Echo Bat — ping the dark</p>
+
+      <p>If something's wrong, broken, or just feels off — get in touch. Replies usually come the same day or the next.</p>
+
+      <div class="contact-card">
+        <a href="mailto:brucker.rob@gmail.com?subject=Echo%20Bat%20support">brucker.rob@gmail.com</a>
+      </div>
+
+      <h2>Common things</h2>
+
+      <p><strong>Tilt isn't working on iPhone.</strong> Open <em>Settings → Privacy &amp; Security → Motion &amp; Fitness</em> and make sure both the system toggle and Echo Bat's row are on. Touch zones at the top and bottom of the screen always work as a backup — they don't need any permission.</p>
+
+      <p><strong>The bat feels too sensitive / not sensitive enough.</strong> The neutral pose is whatever you're holding the phone like at the moment a run starts; reset it by crashing and starting over.</p>
+
+      <p><strong>Sound is muted.</strong> The iOS app is set to play even with the silent switch on, but if you've muted the volume entirely or hit Do Not Disturb that takes priority. Web Safari respects whatever your browser tab's mute state is.</p>
+
+      <p><strong>I died at the last possible second and want my distance back.</strong> Sorry. The cave is implacable. Try a fresh ping.</p>
+
+      <h2>Bug reports</h2>
+      <p>Email helps the most when it includes:</p>
+      <ul>
+        <li>What you were doing when it happened</li>
+        <li>Phone model + iOS version, or browser + OS for the web version</li>
+        <li>A screenshot if it was a visual bug</li>
+      </ul>
+
+      <h2>Source</h2>
+      <p>Echo Bat is built in the open. Code lives at <a href="https://github.com/robbrucker/echo-bat">github.com/robbrucker/echo-bat</a>.</p>
+
+      <hr />
+      <p class="footer">
+        <a href="/">echobat.xyz</a> · <a href="/privacy">Privacy</a>
+      </p>
+    </main>
+  </body>
+</html>

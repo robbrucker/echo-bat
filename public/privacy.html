@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050814" />
+    <meta name="description" content="Privacy policy for Echo Bat." />
+    <title>Echo Bat — Privacy Policy</title>
+    <style>
+      :root {
+        --bg: #050814;
+        --bg-mid: #0a1024;
+        --text: #d3e0f0;
+        --text-dim: #889ab2;
+        --accent: #8ad0ff;
+        --rule: rgba(120, 200, 255, 0.18);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; min-height: 100%; }
+      body {
+        background:
+          radial-gradient(circle at 20% 0%, rgba(20, 50, 90, 0.45), transparent 55%),
+          radial-gradient(circle at 80% 100%, rgba(40, 20, 90, 0.35), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font: 15px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding: 6vh 24px 12vh;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: rgba(230, 245, 255, 0.98);
+        text-shadow: 0 0 24px rgba(140, 220, 255, 0.45);
+        margin: 0 0 8px;
+      }
+      .subtitle {
+        color: var(--text-dim);
+        margin: 0 0 36px;
+        font-size: 13px;
+      }
+      h2 {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        margin: 32px 0 8px;
+        text-transform: uppercase;
+      }
+      p, li { color: var(--text); margin: 0 0 12px; }
+      ul { padding-left: 18px; margin: 0 0 12px; }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px dashed rgba(138, 208, 255, 0.5);
+      }
+      a:hover { border-bottom-style: solid; }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--rule);
+        margin: 40px 0 24px;
+      }
+      .footer {
+        font-size: 12px;
+        color: var(--text-dim);
+      }
+      strong { color: rgba(230, 245, 255, 0.95); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy Policy</h1>
+      <p class="subtitle">Echo Bat · last updated 2026-04-25</p>
+
+      <p>Echo Bat is built so it doesn't need to know anything about you. The TL;DR: <strong>no accounts, no analytics, no tracking, no ads, no third-party SDKs, nothing leaves your device.</strong></p>
+
+      <h2>What we collect</h2>
+      <p><strong>Nothing.</strong> We don't ask for your name, email, location, contacts, or any personal information. The app and the website don't send any data about you to us or anyone else.</p>
+
+      <h2>Data stored on your device</h2>
+      <ul>
+        <li><strong>Best distance.</strong> Your best run is saved in your browser's <code>localStorage</code> (web) or in the app's sandbox (iOS) so you can chase it next time. It never leaves the device.</li>
+        <li><strong>Motion permission state.</strong> iOS remembers whether you granted "Motion &amp; Fitness" access to the app. That's an OS-level setting, controlled in <em>Settings → Privacy &amp; Security → Motion &amp; Fitness</em>.</li>
+      </ul>
+      <p>Clear browser storage, or delete and reinstall the app, to wipe the saved best.</p>
+
+      <h2>Permissions Echo Bat requests</h2>
+      <ul>
+        <li><strong>Motion (iOS) / Device Orientation (web).</strong> Optional. Used only to translate phone tilt into bat steering. The app works without it via touch zones.</li>
+      </ul>
+
+      <h2>Third parties</h2>
+      <p>The website (<a href="https://echobat.xyz">echobat.xyz</a>) is hosted on Vercel. The native iOS app is distributed through Apple's App Store. Both providers receive standard server logs (your IP address, the page or build you fetched, basic device info) when you connect to them — that's an unavoidable part of how the internet and the App Store work, and we don't add anything on top.</p>
+
+      <h2>Children</h2>
+      <p>Echo Bat doesn't collect any data from anyone, regardless of age. The app is rated 4+ and is safe for children.</p>
+
+      <h2>Changes</h2>
+      <p>If we ever change this policy we'll bump the date at the top of the page. There's nothing to notify you about because we don't have your email — but the change history will live in the project's public <a href="https://github.com/robbrucker/echo-bat">GitHub repo</a>.</p>
+
+      <h2>Contact</h2>
+      <p>Questions? <a href="mailto:brucker.rob@gmail.com">brucker.rob@gmail.com</a>.</p>
+
+      <hr />
+      <p class="footer">
+        <a href="/">echobat.xyz</a> · <a href="/support">Support</a>
+      </p>
+    </main>
+  </body>
+</html>
