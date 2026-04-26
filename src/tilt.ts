@@ -24,8 +24,9 @@ interface MotionBridgePlugin {
 }
 const MotionBridge = registerPlugin<MotionBridgePlugin>("MotionBridge");
 
-const DEADZONE_DEG = 6;
-const FULL_RANGE_DEG = 22;
+const DEADZONE_DEG = 5;
+const FULL_RANGE_DEG = 14; // tilt past this for full input (was 22 — too wide)
+const RESPONSE_POWER = 0.6; // <1 makes small tilts feel more responsive
 const RECALIBRATE_ALPHA = 0.0015;
 
 type TiltStatus = "unsupported" | "pending" | "denied" | "granted" | "no-events";
@@ -89,7 +90,11 @@ function processAccel(ax: number, ay: number, az: number): void {
     analogSteer = 0;
     return;
   }
-  const t = Math.min(1, (absDeg - DEADZONE_DEG) / (FULL_RANGE_DEG - DEADZONE_DEG));
+  // Linear ratio in [0, 1] then a sub-1 power curve so small post-deadzone
+  // tilts produce proportionally larger inputs — tilt feels nearly as
+  // responsive as a held arrow key without losing analog control.
+  const linear = Math.min(1, (absDeg - DEADZONE_DEG) / (FULL_RANGE_DEG - DEADZONE_DEG));
+  const t = Math.pow(linear, RESPONSE_POWER);
   // Convention: bat goes UP for negative input, DOWN for positive. We pick
   // the sign so tilting "forward" (top of screen away) sends bat up, but
   // since we use whichever-axis-moves-most, the sign is just a discoverable
