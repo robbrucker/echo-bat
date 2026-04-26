@@ -26,8 +26,11 @@ public class MotionBridge: CAPPlugin, CAPBridgedPlugin {
     private let manager = CMMotionManager()
 
     @objc func start(_ call: CAPPluginCall) {
+        // Resolve silently when there's no accelerometer (Simulator). The app
+        // still runs fine on touch zones and the menu doesn't show a
+        // misleading "denied" message — events just never fire.
         guard manager.isAccelerometerAvailable else {
-            call.reject("Accelerometer not available on this device")
+            call.resolve()
             return
         }
         if manager.isAccelerometerActive {

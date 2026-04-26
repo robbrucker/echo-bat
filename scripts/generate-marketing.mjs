@@ -80,6 +80,23 @@ const ASSETS = {
       "tight focused composition with the creature filling 60% of the frame, " +
       SHARED_STYLE,
   },
+  // Personal LinkedIn banner — generated at 21:9 then cropped to 4:1 (1584x396)
+  // by post-processing. Cyberpunk professional, lots of negative space so a
+  // name/headline overlay reads cleanly.
+  linkedin: {
+    aspect_ratio: "21:9",
+    prompt:
+      "ultra-wide cinematic LinkedIn banner, cyberpunk-meets-editorial-tech aesthetic. " +
+      "Streaming columns of glowing binary code (0s and 1s) cascading diagonally in deep cyan, " +
+      "intricate circuit-board traces and node clusters laid over a deep navy / obsidian-black base, " +
+      "abstract data-flow ribbons of light, distant bokeh of server-rack indicator lights, " +
+      "subtle electric magenta accent on the right edge, " +
+      "soft volumetric haze, cinematic depth of field, " +
+      "refined and sophisticated, professional, editorial — NOT cartoonish, NOT over-saturated, " +
+      "lots of negative space across the middle band for a name overlay, " +
+      "minimal central subject, atmospheric, 4K quality, dramatic but tasteful lighting, " +
+      "abstract tech artwork, no text, no watermarks, no UI",
+  },
 };
 
 function loadEnv() {
