@@ -25,6 +25,7 @@ import {
 } from "./hud";
 import { loadBest, saveBest, formatMeters } from "./score";
 import { updateTheme, resetTheme, biomeAt, BIOMES, type BiomeName } from "./biomes";
+import { recalibrateTilt } from "./tilt";
 import {
   playPing,
   playCrash,
@@ -189,6 +190,9 @@ export class Game {
     this.inNearMissZone = false;
     this.powerupUntil = { slow: -Infinity, magnet: -Infinity };
     resetTheme();
+    // Reset tilt neutral so the player's current posture becomes the new
+    // zero — useful after a crash where they may have shifted hands.
+    recalibrateTilt();
     this.lastBiome = "abyss";
     this.lastBossPingSfx = -Infinity;
     this.state = "playing";
