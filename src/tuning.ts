@@ -3,10 +3,10 @@ export const MAX_WORLD_SPEED = 400;
 export const DIFFICULTY_FULL_DISTANCE = 4000;
 export const SPEED_ACCEL_PER_PX = 0.0085;
 
-export const CAVE_START_MIN_GAP = 210;
-export const CAVE_END_MIN_GAP = 130;
-export const CAVE_START_NOISE = 24;
-export const CAVE_END_NOISE = 44;
+export const CAVE_START_MIN_GAP = 270;
+export const CAVE_END_MIN_GAP = 175;
+export const CAVE_START_NOISE = 22;
+export const CAVE_END_NOISE = 38;
 
 export const MENU_DRIFT_FACTOR = 0.28;
 export const MENU_AUTO_PING_SEC = 1.8;
