@@ -2,26 +2,18 @@ import type { Canvas } from "./render";
 import { formatMeters } from "./score";
 import { POWERUP_COLOR, type PowerupKind } from "./powerups";
 import { Capacitor } from "@capacitor/core";
-import { getTiltStatus, getLastAccel, getTiltSteer } from "./tilt";
+import { getTiltStatus } from "./tilt";
 
 const IS_NATIVE = Capacitor.isNativePlatform();
 
-const TILT_STATUS_TEXT: Record<ReturnType<typeof getTiltStatus>, string> = {
-  unsupported: "tilt: not supported",
-  pending: "tilt: starting up...",
+// Only surface a tilt-status line when it's actively a problem the user
+// could act on. The "happy path" (granted, no-events, pending) stays silent
+// so the menu reads as a clean hero, not a diagnostics screen.
+const TILT_PROBLEM_TEXT: Partial<Record<ReturnType<typeof getTiltStatus>, string>> = {
+  unsupported: "tilt unavailable on this browser — top/bottom tap still works",
   denied: IS_NATIVE
-    ? "tilt: native bridge unavailable"
-    : "tilt: denied — Settings > Safari > Motion",
-  granted: "tilt: on",
-  "no-events": "tilt: starting, awaiting first reading",
-};
-
-const TILT_STATUS_ON: Record<ReturnType<typeof getTiltStatus>, boolean> = {
-  unsupported: false,
-  pending: false,
-  denied: false,
-  granted: true,
-  "no-events": false,
+    ? "tilt blocked — touch zones still work"
+    : "tilt denied — Settings > Safari > Motion",
 };
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -251,63 +243,58 @@ export function drawMenuOverlay(
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
 
-  // title
-  ctx.fillStyle = "rgba(220, 240, 255, 0.95)";
-  ctx.shadowColor = "rgba(120, 200, 255, 0.7)";
-  ctx.shadowBlur = 24;
-  ctx.font = `600 72px ${MONO}`;
-  ctx.fillText("ECHO  BAT", cx, cy - 60);
+  // Title with a subtle breathing glow.
+  const titlePulse = 0.5 + 0.5 * Math.sin(time * 1.2);
+  ctx.fillStyle = "rgba(230, 245, 255, 0.98)";
+  ctx.shadowColor = `rgba(140, 220, 255, ${0.55 + 0.25 * titlePulse})`;
+  ctx.shadowBlur = 28 + 8 * titlePulse;
+  ctx.font = `700 84px ${MONO}`;
+  ctx.fillText("ECHO  BAT", cx, cy - 44);
 
-  // tagline
+  // Tagline.
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "rgba(180, 200, 225, 0.6)";
-  ctx.font = `13px ${MONO}`;
-  ctx.fillText("ping the dark", cx, cy - 20);
+  ctx.fillStyle = "rgba(180, 200, 225, 0.7)";
+  ctx.font = `14px ${MONO}`;
+  ctx.fillText("ping the dark", cx, cy - 4);
 
-  // controls
-  ctx.fillStyle = "rgba(160, 180, 210, 0.5)";
+  // Controls — kept small, single line.
+  ctx.fillStyle = "rgba(160, 180, 210, 0.55)";
   ctx.font = `12px ${MONO}`;
-  if (IS_TOUCH) {
-    ctx.fillText("tilt — steer     tap — dash", cx, cy + 38);
-    const status = getTiltStatus();
-    ctx.fillStyle = TILT_STATUS_ON[status]
-      ? "rgba(150, 255, 190, 0.6)"
-      : "rgba(255, 200, 150, 0.45)";
-    ctx.font = `10px ${MONO}`;
-    ctx.fillText(TILT_STATUS_TEXT[status], cx, cy + 56);
+  ctx.fillText(
+    IS_TOUCH ? "tilt to steer  ·  tap to dash" : "↑ ↓ to steer  ·  space to dash",
+    cx,
+    cy + 44,
+  );
 
-    // Live motion-data debug — proves whether accel events actually flow.
-    // Stays subtle (small, dim) so it doesn't clutter the menu in production.
-    const accel = getLastAccel();
-    if (accel) {
-      const steer = getTiltSteer();
-      ctx.fillStyle = "rgba(140, 200, 240, 0.45)";
-      ctx.font = `9px ${MONO}`;
-      ctx.fillText(
-        `g=(${accel.x.toFixed(2)}, ${accel.y.toFixed(2)}, ${accel.z.toFixed(2)})  steer=${steer.toFixed(2)}`,
-        cx,
-        cy + 72,
-      );
-    }
-  } else {
-    ctx.fillText("space — dash     ↑ ↓ — steer", cx, cy + 46);
-  }
-
-  // best
+  // Best (only after a run). Stays high-contrast so it pops against the
+  // background painted scenes.
   if (best > 0) {
-    ctx.fillStyle = "rgba(150, 255, 190, 0.7)";
-    ctx.font = `12px ${MONO}`;
-    const bestY = IS_TOUCH ? cy + 92 : cy + 68;
-    ctx.fillText(`best  ${formatMeters(best)}`, cx, bestY);
+    ctx.fillStyle = "rgba(160, 255, 200, 0.85)";
+    ctx.shadowColor = "rgba(120, 240, 180, 0.5)";
+    ctx.shadowBlur = 10;
+    ctx.font = `600 14px ${MONO}`;
+    ctx.fillText(`best  ${formatMeters(best)}`, cx, cy + 70);
+    ctx.shadowBlur = 0;
   }
 
-  // prompt
+  // Pulsing tap-to-fly prompt.
   const pulse = 0.5 + 0.5 * Math.sin(time * 2.4);
-  ctx.fillStyle = `rgba(210, 235, 255, ${0.35 + 0.6 * pulse})`;
+  ctx.fillStyle = `rgba(220, 240, 255, ${0.4 + 0.55 * pulse})`;
   ctx.shadowColor = "rgba(140, 220, 255, 0.8)";
-  ctx.shadowBlur = 10 * pulse;
-  ctx.font = `16px ${MONO}`;
+  ctx.shadowBlur = 12 * pulse;
+  ctx.font = `600 18px ${MONO}`;
   ctx.fillText(IS_TOUCH ? "tap to fly" : "press space to fly", cx, cy + 116);
+  ctx.shadowBlur = 0;
+
+  // Status line only when there's a real problem the player can act on.
+  // Sits subtle at the bottom of the menu rather than over the title.
+  const problem = TILT_PROBLEM_TEXT[getTiltStatus()];
+  if (IS_TOUCH && problem) {
+    ctx.fillStyle = "rgba(255, 200, 150, 0.55)";
+    ctx.font = `10px ${MONO}`;
+    ctx.fillText(problem, cx, cy + 148);
+  }
+
   ctx.restore();
 }
 
